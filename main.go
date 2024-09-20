@@ -9,7 +9,7 @@ import (
 
 const (
 	ApiPort = "9080"
-	WebPort = "9081"
+	//WebPort = "9081"
 )
 
 func main() {
@@ -24,6 +24,7 @@ func main() {
 	mux.HandleFunc("/user/tickets", Handlers.UserTicketsHandler(db))
 	mux.HandleFunc("/flights", Handlers.FlightsInformationHandler(db))
 	mux.HandleFunc("/flights/book", Handlers.TicketBookingHandler(db))
+	log.Println("Starting server on port :", ApiPort)
 	err = http.ListenAndServe(":"+ApiPort, mux)
 	if err != nil {
 		log.Fatal("Cannot start server", err)
