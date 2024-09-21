@@ -1,10 +1,17 @@
 package Models
 
 type User struct {
-	Name         string `json:"FNAME"`
-	Username     string `json:"UNAME"`
-	PasswordHash string `json:"PASS_HASH"`
-	Phone        string `json:"PHONE"`
-	Email        string `json:"EMAIL"`
-	ID           int    `json:"UID"`
+	Name         string `json:"Full_Name"`
+	Username     string `json:"Username"`
+	PasswordHash string `json:"Password_Hash"`
+	Phone        string `json:"Phone"`
+	Email        string `json:"Email"`
+	ID           int    `json:"User_Id"`
+}
+type UpdateUserRequest struct {
+	Username     string `json:"Username,omitempty"`
+	PasswordHash string `json:"Password_Hash,omitempty"`
+	Phone        string `json:"Phone,omitempty"`
+	Email        string `json:"Email,omitempty"`
+	Name         string `json:"Name,omitempty"`
 }
