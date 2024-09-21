@@ -135,6 +135,8 @@ func updateUserDetails(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
 	}
+
+	// TODO: Make sure to implement features on client side to make sure that data not passed is not overwritten or find a compromise
 	res, err := db.Exec("UPDATE users SET FNAME = ?, PHONE = ?, EMAIL = ? ,PASS_HASH = ? WHERE UNAME = ?", editUserDetails.Name, editUserDetails.Phone, editUserDetails.Email, editUserDetails.PasswordHash, editUserDetails.Username)
 	if err != nil {
 		http.Error(w, "Database error", http.StatusInternalServerError)
