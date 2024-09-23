@@ -4,7 +4,14 @@ import (
 	"AirportAPI/Models"
 	"database/sql"
 	"encoding/json"
+	"log"
 	"net/http"
+	"strings"
+)
+
+var (
+	filters    Models.Filters
+	flightInfo Models.Flight
 )
 
 func FlightsInformationHandler(db *sql.DB) http.HandlerFunc {
@@ -13,30 +20,65 @@ func FlightsInformationHandler(db *sql.DB) http.HandlerFunc {
 		default:
 			fallthrough
 		case http.MethodPost:
-			getAvailableFlight(db, w, r)
-		case http.MethodGet:
 			http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+		case http.MethodGet:
+			getAvailableFlight(db, w, r)
 		}
 	}
 }
+
+// query: url:port/flights?q filter1=value ...
 func getAvailableFlight(db *sql.DB, w http.ResponseWriter, r *http.Request) {
-	var filters Models.Filters
-	var flightInfo Models.Flight
-	err := json.NewDecoder(r.Body).Decode(&filters)
+	baseQuery := `SELECT FID,DESTINATION,TERMINAL,PRICE,DEPATURE_TIME,AIRLINE,AVAILABLE_SEATS FROM flights`
+	var conditions []string
+	var args []interface{}
+	var err error
+	query := r.URL.Query()
+	filters.Airline = query.Get("airline")
+	filters.Destination = query.Get("destination")
+	filters.MinPrice = query.Get("min_price")
+	filters.MaxPrice = query.Get("max_price")
+	if filters.Airline != "" {
+		conditions = append(conditions, "AIRLINE = ?")
+		args = append(args, filters.Airline)
+	}
+	if filters.Destination != "" {
+		conditions = append(conditions, "DESTINATION = ?")
+		args = append(args, filters.Destination)
+	}
+	if filters.MaxPrice != "" {
+		conditions = append(conditions, "PRICE >= ?")
+		args = append(args, filters.MaxPrice)
+	}
+	if filters.MinPrice != "" {
+		conditions = append(conditions, "PRICE <= ?")
+		args = append(args, filters.MinPrice)
+	}
+	if len(conditions) > 0 {
+		baseQuery = baseQuery + " WHERE " + strings.Join(conditions, " AND ")
+	}
+	log.Println(baseQuery, args)
+	rows, err := db.Query(baseQuery, args...)
 	if err != nil {
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
-	if filters.Airline == "" || filters.Destination == "" || filters.MaxPrice == 0 || filters.MinPrice == 0 {
-		err := db.QueryRow("SELECT DESTINATION , FID , TERMINAL , PRICE , DEPATURE_TIME, AVAILABLE_SEATS FROM flights").Scan(&flightInfo.Destination, &flightInfo.ID, &flightInfo.Terminal, &flightInfo.Price, &flightInfo.DepatureTime, &flightInfo.AvailableSeats)
+	defer func(rows *sql.Rows) {
+		err = rows.Close()
 		if err != nil {
-			http.Error(w, "Error fetching flights information", http.StatusInternalServerError)
 			return
 		}
-		err = json.NewEncoder(w).Encode(flightInfo)
+	}(rows)
+	var flights []Models.Flight
+	for rows.Next() {
+		err := rows.Scan(&flightInfo.ID, &flightInfo.Destination, &flightInfo.Terminal, &flightInfo.Price, &flightInfo.DepatureTime, &flightInfo.Airline, &flightInfo.AvailableSeats)
 		if err != nil {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		}
+		flights = append(flights, flightInfo)
 	}
-
+	err = json.NewEncoder(w).Encode(flights)
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
 }
