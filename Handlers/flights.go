@@ -77,6 +77,7 @@ func getAvailableFlight(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 		}
 		flights = append(flights, flightInfo)
 	}
+	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(flights)
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
