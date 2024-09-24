@@ -67,7 +67,7 @@ func ticketBooking(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 	ticketInfo.FID = fidNum
 
 	// Storing gathered information into tickets table
-	res, err := db.Exec("INSERT INTO tickets (REGNO, UID, FID, DEPATURE_TIME, FNAME, AIRLINE, DESTINATION) VALUES (?,?,?,?,?,?,?)", ticketInfo.RegNo, ticketInfo.UID, ticketInfo.FID, ticketInfo.DepatureTime, ticketInfo.DepatureTime, ticketInfo.Name, ticketInfo.Airline)
+	res, err := db.Exec("INSERT INTO tickets (REGNO, UID, FID, DEPATURE_TIME, FNAME, AIRLINE, DESTINATION) VALUES (?,?,?,?,?,?,?)", ticketInfo.RegNo, ticketInfo.UID, ticketInfo.FID, ticketInfo.DepatureTime, ticketInfo.Name, ticketInfo.Airline, ticketInfo.Destination)
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		log.Fatal(err)

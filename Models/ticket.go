@@ -15,3 +15,8 @@ type BookingRequest struct {
 	FlightID string `json:"flight_id"`
 	UserId   string `json:"user_id"`
 }
+type UserTicketRequestFilters struct {
+	UserId      string `json:"user_id"`
+	Destination string `json:"destination"`
+	Airline     string `json:"airline"`
+}

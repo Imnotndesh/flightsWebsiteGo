@@ -4,7 +4,6 @@ import (
 	"AirportAPI/Models"
 	"database/sql"
 	"encoding/json"
-	"log"
 	"net/http"
 	"strings"
 )
@@ -57,7 +56,6 @@ func getAvailableFlight(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 	if len(conditions) > 0 {
 		baseQuery = baseQuery + " WHERE " + strings.Join(conditions, " AND ")
 	}
-	log.Println(baseQuery, args)
 	rows, err := db.Query(baseQuery, args...)
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -74,6 +72,7 @@ func getAvailableFlight(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 		err := rows.Scan(&flightInfo.ID, &flightInfo.Destination, &flightInfo.Terminal, &flightInfo.Price, &flightInfo.DepatureTime, &flightInfo.Airline, &flightInfo.AvailableSeats)
 		if err != nil {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
 		flights = append(flights, flightInfo)
 	}
