@@ -1,12 +1,12 @@
 package Models
 
 type User struct {
-	Name         string `json:"Full_Name"`
-	Username     string `json:"Username"`
-	PasswordHash string `json:"Password_Hash"`
-	Phone        string `json:"Phone"`
-	Email        string `json:"Email"`
-	ID           int    `json:"User_Id"`
+	Name         string `json:"full_name"`
+	Username     string `json:"username"`
+	PasswordHash string `json:"password_hash"`
+	Phone        string `json:"phone"`
+	Email        string `json:"email"`
+	ID           int    `json:"user_id"`
 }
 type UpdateUserRequest struct {
 	Username     string `json:"Username,omitempty"`
@@ -14,4 +14,8 @@ type UpdateUserRequest struct {
 	Phone        string `json:"Phone,omitempty"`
 	Email        string `json:"Email,omitempty"`
 	Name         string `json:"Name,omitempty"`
+}
+
+type GetUserRequest struct {
+	Username string `json:"Username"`
 }

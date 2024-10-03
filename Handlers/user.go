@@ -9,10 +9,6 @@ import (
 	"net/http"
 )
 
-type userRequest struct {
-	Username string `json:"username"`
-}
-
 // UserDetailsHandler -> Filter requests based on methods
 func UserDetailsHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -29,7 +25,7 @@ func UserDetailsHandler(db *sql.DB) http.HandlerFunc {
 
 // getUserDetails -> Returns user info from DB using JSON response
 func getUserDetails(db *sql.DB, w http.ResponseWriter, r *http.Request) {
-	var req userRequest
+	var req Models.GetUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 	}
