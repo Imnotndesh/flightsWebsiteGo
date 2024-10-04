@@ -29,9 +29,9 @@ func getUserDetails(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 	}
-	var userDetails Models.User
+	var fetchedUserDetails Models.User
 	log.Println(req)
-	err := db.QueryRow("SELECT PHONE,EMAIL,FNAME,UID FROM users WHERE UNAME = ?", req.Username).Scan(&userDetails.Phone, &userDetails.Email, &userDetails.Name, &userDetails.ID)
+	err := db.QueryRow("SELECT PHONE,EMAIL,FNAME,UID FROM users WHERE UNAME = ?", req.Username).Scan(&fetchedUserDetails.Phone, &fetchedUserDetails.Email, &fetchedUserDetails.Name, &fetchedUserDetails.ID)
 	if errors.Is(err, sql.ErrNoRows) {
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
@@ -39,9 +39,9 @@ func getUserDetails(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Database error", http.StatusInternalServerError)
 		return
 	}
-	userDetails.Username = req.Username
+	fetchedUserDetails.Username = req.Username
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(userDetails)
+	err = json.NewEncoder(w).Encode(fetchedUserDetails)
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
@@ -65,14 +65,14 @@ func UserRegistrationHandler(db *sql.DB) http.HandlerFunc {
 // registerUser -> adds new user to DB using passed JSON as user details source
 func registerUser(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 	var newUserData Models.User
-	if err := json.NewDecoder(r.Body).Decode(&newUserData); err != nil {
+	if err = json.NewDecoder(r.Body).Decode(&newUserData); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 	log.Println(newUserData)
 	// Check for existing user
 	var existingUserID int
-	err := db.QueryRow("SELECT UID FROM users WHERE UNAME = ?", newUserData.Username).Scan(&existingUserID)
+	err = db.QueryRow("SELECT UID FROM users WHERE UNAME = ?", newUserData.Username).Scan(&existingUserID)
 	if err == nil {
 		http.Error(w, "User Exists", http.StatusInternalServerError)
 		return
@@ -92,7 +92,9 @@ func registerUser(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 	newUserData.ID = int(userID)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	err = json.NewEncoder(w).Encode(newUserData)
+	response.Message = "User registration success"
+	response.Success = true
+	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
 		http.Error(w, "Error returning new user details", http.StatusInternalServerError)
 		return
@@ -147,8 +149,12 @@ func updateUserDetails(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error updating user", http.StatusNotFound)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(editUserDetails)
+
+	// JSON response formulation
+	w.WriteHeader(http.StatusOK)
+	response.Message = "User Updated"
+	response.Success = true
+	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
 		http.Error(w, "Error returning new user details", http.StatusInternalServerError)
 		return

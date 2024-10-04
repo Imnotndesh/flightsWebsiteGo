@@ -11,7 +11,7 @@ import (
 var (
 	reqBody     Models.AuthRequest
 	userDetails Models.User
-	response    Models.Response
+	response    Models.ProcessingResponse
 )
 
 func AuthHandler(db *sql.DB) http.HandlerFunc {

@@ -13,6 +13,7 @@ import (
 var (
 	ticketInfo     Models.Ticket
 	bookingRequest Models.BookingRequest
+	tReponse       Models.ProcessingResponse
 )
 
 func TicketBookingHandler(db *sql.DB) http.HandlerFunc {
@@ -87,10 +88,13 @@ func ticketBooking(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 	if num == 0 {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
-	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(ticketInfo)
+
+	// Json response formulation
+	w.WriteHeader(http.StatusOK)
+	tReponse.Message = "Booking Successful"
+	tReponse.Success = true
+	err = json.NewEncoder(w).Encode(tReponse)
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
 	}
 }
