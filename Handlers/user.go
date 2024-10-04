@@ -92,6 +92,8 @@ func registerUser(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 	newUserData.ID = int(userID)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
+
+	// Success message construction
 	response.Message = "User registration success"
 	response.Success = true
 	err = json.NewEncoder(w).Encode(response)

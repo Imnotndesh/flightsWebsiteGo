@@ -3,6 +3,7 @@ package main
 import (
 	"AirportAPI/Database"
 	"AirportAPI/Handlers"
+	"AirportAPI/Pages/Handler"
 	"log"
 	"net/http"
 )
@@ -26,8 +27,11 @@ func main() {
 	mux.HandleFunc("/user/tickets", Handlers.UserTicketsHandler(db))
 	mux.HandleFunc("/flights", Handlers.FlightsInformationHandler(db))
 	mux.HandleFunc("/flights/book", Handlers.TicketBookingHandler(db))
+	mux.HandleFunc("/user/login", Handlers.AuthHandler(db))
 
-	mux.HandleFunc("/login", Handlers.AuthHandler(db))
+	// Pages Routes definition
+	mux.HandleFunc("/login", Handler.LoginHandler())
+	mux.HandleFunc("/register", Handler.RegistrationHandler())
 	log.Println("Starting server on port :", ApiPort)
 	err = http.ListenAndServe(":"+ApiPort, mux)
 	if err != nil {

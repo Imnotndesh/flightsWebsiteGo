@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
+	"time"
 )
 
 var (
@@ -20,7 +22,7 @@ func AuthHandler(db *sql.DB) http.HandlerFunc {
 		default:
 			fallthrough
 		case http.MethodGet:
-			http.ServeFile(w, r, "./Pages/Login/index.html")
+			http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 			return
 		case http.MethodPost:
 			authenticateUser(db, w, r)
@@ -34,7 +36,7 @@ func authenticateUser(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
-	err = db.QueryRow("SELECT PASS_HASH FROM users WHERE UNAME=? LIMIT 1", reqBody.Username).Scan(&userDetails.PasswordHash)
+	err = db.QueryRow("SELECT PASS_HASH,UID FROM users WHERE UNAME=? LIMIT 1", reqBody.Username).Scan(&userDetails.PasswordHash, &userDetails.ID)
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
@@ -54,11 +56,17 @@ func authenticateUser(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 	} else {
 		response.Success = true
 		response.Message = "Login Successful"
+		http.SetCookie(w, &http.Cookie{
+			Name:    "localuid",
+			Value:   strconv.Itoa(userDetails.ID),
+			Path:    "/",
+			Expires: time.Now().Add(10 * time.Minute),
+			MaxAge:  600,
+		})
 		w.WriteHeader(http.StatusOK)
 		err = json.NewEncoder(w).Encode(response)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 	}
-	// GENERATE COOKIE AFTER THIS
 }

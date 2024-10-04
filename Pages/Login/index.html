@@ -4,7 +4,12 @@
     <meta charset="UTF-8">
     <title>Login Page</title>
     <script>
-        // ADD CHECK FOR EXISTING COOKIES BEFORE LOGIN
+        (function () {
+            let sessionCookie = localStorage.getItem('localuid') || sessionStorage.getItem('localuid');
+            if (sessionCookie){
+                window.location.href="/flights";
+            }
+        })();
         document.addEventListener('DOMContentLoaded', function (){
             const form = document.getElementById('loginForm');
             const passBox = document.getElementById('Password')
@@ -16,15 +21,24 @@
                     password: formData.get('Password')
                 };
                 try{
-                    const response = await fetch('/login', {
+                    const response = await fetch('/user/login', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                         },
                         body: JSON.stringify(data),
+                        credentials: 'include'
                     });
                     const result = await response.json();
                     if (result.success){
+                        let cookies = document.cookie;
+                        let sessionCookie = cookies.split("; ").find(row => row.startsWith('localuid='));
+                        if (sessionCookie){
+                            let cookieValue = sessionCookie.split('=')[1];
+                            localStorage.setItem('localuid',cookieValue);
+                        }else{
+                            console.log("Error finding cookie")
+                        }
                         window.location.href="/flights";
                     }else{
                         alert("Invalid Login credentials")
