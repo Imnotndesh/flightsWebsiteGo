@@ -61,13 +61,13 @@ func getAvailableFlight(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
+	var flights []Models.Flight
 	defer func(rows *sql.Rows) {
 		err = rows.Close()
 		if err != nil {
 			return
 		}
 	}(rows)
-	var flights []Models.Flight
 	for rows.Next() {
 		err := rows.Scan(&flightInfo.ID, &flightInfo.Destination, &flightInfo.Terminal, &flightInfo.Price, &flightInfo.DepatureTime, &flightInfo.Airline, &flightInfo.AvailableSeats)
 		if err != nil {

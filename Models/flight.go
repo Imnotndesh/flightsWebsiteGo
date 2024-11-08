@@ -1,13 +1,13 @@
 package Models
 
 type Flight struct {
-	ID             int    `json:"FID"`
-	Destination    string `json:"DESTINATION"`
-	Terminal       string `json:"TERMINAL"`
-	Price          int    `json:"PRICE"`
-	DepatureTime   int    `json:"DEPATURE_TIME"`
+	ID             int    `json:"fid"`
+	Destination    string `json:"destination"`
+	Terminal       string `json:"terminal"`
+	Price          int    `json:"price"`
+	DepatureTime   int    `json:"departure_time"`
 	Airline        string `json:"airline"`
-	AvailableSeats int    `json:"AVAILABLE_SEATS"`
+	AvailableSeats int    `json:"available_seats"`
 }
 
 type Filters struct {

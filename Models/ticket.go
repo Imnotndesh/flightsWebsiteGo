@@ -10,11 +10,14 @@ type Ticket struct {
 	DepatureTime int    `json:"departure_time"`
 	Name         string `json:"fname"`
 	Airline      string `json:"airline"`
+	//backport this to ticket history frontend
+	Price   int `json:"price"`
+	Tickets int `json:"tickets"`
 }
 type BookingRequest struct {
 	FlightID string `json:"flight_id"`
-	UserId   string `json:"user_id"`
-	Tickets  string `json:"tickets"`
+	Username string `json:"username"`
+	Tickets  int    `json:"tickets"`
 }
 type UserTicketRequestFilters struct {
 	UserId      string `json:"user_id"`
