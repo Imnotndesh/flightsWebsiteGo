@@ -5,9 +5,8 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"golang.org/x/crypto/bcrypt"
 	"net/http"
-	"strconv"
-	"time"
 )
 
 var (
@@ -36,7 +35,7 @@ func authenticateUser(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
-	err = db.QueryRow("SELECT PASS_HASH,UID FROM users WHERE UNAME=? LIMIT 1", reqBody.Username).Scan(&userDetails.PasswordHash, &userDetails.ID)
+	err = db.QueryRow("SELECT PASS_HASH FROM users WHERE UNAME=? LIMIT 1", reqBody.Username).Scan(&userDetails.PasswordHash)
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
@@ -44,29 +43,11 @@ func authenticateUser(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
-	if userDetails.PasswordHash != reqBody.Password {
-		response.Message = "Invalid Password"
-		response.Success = false
-		w.WriteHeader(http.StatusUnauthorized)
-		err = json.NewEncoder(w).Encode(response)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
+	if bcrypt.CompareHashAndPassword([]byte(userDetails.PasswordHash), []byte(reqBody.Password)) != nil {
+		w.WriteHeader(http.StatusOK)
 		return
 	} else {
-		response.Success = true
-		response.Message = "Login Successful"
-		http.SetCookie(w, &http.Cookie{
-			Name:    "localuid",
-			Value:   strconv.Itoa(userDetails.ID),
-			Path:    "/",
-			Expires: time.Now().Add(10 * time.Minute),
-			MaxAge:  600,
-		})
-		w.WriteHeader(http.StatusOK)
-		err = json.NewEncoder(w).Encode(response)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
+		w.WriteHeader(http.StatusUnauthorized)
+		return
 	}
 }

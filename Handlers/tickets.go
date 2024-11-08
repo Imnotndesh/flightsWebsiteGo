@@ -4,14 +4,13 @@ import (
 	"AirportAPI/Models"
 	"database/sql"
 	"encoding/json"
+	"errors"
+	"log"
 	"net/http"
 	"net/url"
-	"strings"
 )
 
 var (
-	conditions    []string
-	args          []interface{}
 	err           error
 	query         url.Values
 	searchFilters Models.UserTicketRequestFilters
@@ -31,38 +30,24 @@ func UserTicketsHandler(db *sql.DB) http.HandlerFunc {
 	}
 }
 func getUserTicketHistory(db *sql.DB, w http.ResponseWriter, r *http.Request) {
-	baseQuery := `SELECT TID,REGNO,FID,DEPATURE_TIME,AIRLINE,DESTINATION FROM tickets`
+	var user Models.User
 	query = r.URL.Query()
-
-	// fetch primary filter
-	searchFilters.UserId = query.Get("user_id")
-	if searchFilters.UserId == "" {
+	var queryUsername string = query.Get("Username")
+	if queryUsername == "" {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
-	conditions = append(conditions, "UID = ?")
-	args = append(args, searchFilters.UserId)
-	// Fetch optional filters
-	searchFilters.Destination = query.Get("destination")
-	searchFilters.Airline = query.Get("airline")
-
-	if searchFilters.Airline == "" {
-		conditions = append(conditions, "AIRLINE = ?")
-		args = append(args, searchFilters.Airline)
-	}
-	if searchFilters.Destination == "" {
-		conditions = append(conditions, "DESTINATION = ?")
-		args = append(args, searchFilters.Destination)
-	}
-	if len(conditions) > 0 {
-		baseQuery = baseQuery + " WHERE " + strings.Join(conditions, " AND ")
-	}
-	rows, err := db.Query(baseQuery, args...)
+	log.Println(queryUsername)
+	err = db.QueryRow(`SELECT UID from users where UNAME = ?`, queryUsername).Scan(&user.ID)
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
+	} else if errors.Is(err, sql.ErrNoRows) {
+		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
 	}
-
+	log.Println(user.ID)
+	rows, err := db.Query(`SELECT TID,REGNO,FID,DEPATURE_TIME,AIRLINE,DESTINATION FROM tickets WHERE UID =?`, user.ID)
 	defer func(rows *sql.Rows) {
 		err = rows.Close()
 		if err != nil {
