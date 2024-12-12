@@ -8,6 +8,8 @@ type Flight struct {
 	DepatureTime   int    `json:"departure_time"`
 	Airline        string `json:"airline"`
 	AvailableSeats int    `json:"available_seats"`
+	PID            int    `json:"pid"`
+	REGNO          string `json:"regno"`
 }
 
 type Filters struct {

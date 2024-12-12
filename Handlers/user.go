@@ -9,8 +9,8 @@ import (
 	"net/http"
 )
 
-// Function to hash the password before storage
-func hashUserPassword(password string) (string, error) {
+// HashPassword Function to hash the password before storage
+func HashPassword(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return "", err
@@ -39,7 +39,7 @@ func getUserDetails(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 	}
 	var fetchedUserDetails Models.User
-	err := db.QueryRow("SELECT PHONE,EMAIL,FNAME,UID FROM users WHERE UNAME = ?", req.Username).Scan(&fetchedUserDetails.Phone, &fetchedUserDetails.Email, &fetchedUserDetails.Name, &fetchedUserDetails.ID)
+	err := db.QueryRow("SELECT PHONE,EMAIL,FNAME,UID FROM users WHERE UNAME = ?", req.Username).Scan(&fetchedUserDetails.Phone, &fetchedUserDetails.Email, &fetchedUserDetails.Fullname, &fetchedUserDetails.ID)
 	if errors.Is(err, sql.ErrNoRows) {
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
@@ -87,12 +87,12 @@ func registerUser(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	newUserData.PasswordHash, err = hashUserPassword(newUserData.Password)
+	newUserData.PasswordHash, err = HashPassword(newUserData.Password)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	res, err := db.Exec("INSERT INTO users(UNAME, PHONE, EMAIL, FNAME, PASS_HASH) VALUES(?,?,?,?,?)", newUserData.Username, newUserData.Phone, newUserData.Email, newUserData.Name, newUserData.PasswordHash)
+	res, err := db.Exec("INSERT INTO users(UNAME, PHONE, EMAIL, FNAME, PASS_HASH) VALUES(?,?,?,?,?)", newUserData.Username, newUserData.Phone, newUserData.Email, newUserData.Fullname, newUserData.PasswordHash)
 	if err != nil {
 		http.Error(w, "Error registering user", http.StatusInternalServerError)
 		return
@@ -104,15 +104,6 @@ func registerUser(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 	newUserData.ID = int(userID)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-
-	// Success message construction
-	response.Message = "User registration success"
-	response.Success = true
-	err = json.NewEncoder(w).Encode(response)
-	if err != nil {
-		http.Error(w, "Error returning new user details", http.StatusInternalServerError)
-		return
-	}
 
 }
 
@@ -148,19 +139,19 @@ func updateUserDetails(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
 	}
-	hashedPass, err := hashUserPassword(editUserDetails.Password)
+	hashedPass, err := HashPassword(editUserDetails.Password)
 	if err != nil {
 		http.Error(w, "Error hashing password", http.StatusInternalServerError)
 		return
 	}
 	newUserData = Models.User{
 		Username:     editUserDetails.Username,
-		Name:         editUserDetails.Name,
+		Fullname:     editUserDetails.Name,
 		Phone:        editUserDetails.Phone,
 		Email:        editUserDetails.Email,
 		PasswordHash: string(hashedPass),
 	}
-	res, err := db.Exec("UPDATE users SET FNAME = ?, PHONE = ?, EMAIL = ? ,PASS_HASH = ? WHERE UNAME = ?", newUserData.Name, newUserData.Phone, newUserData.Email, newUserData.PasswordHash, newUserData.Username)
+	res, err := db.Exec("UPDATE users SET FNAME = ?, PHONE = ?, EMAIL = ? ,PASS_HASH = ? WHERE UNAME = ?", newUserData.Fullname, newUserData.Phone, newUserData.Email, newUserData.PasswordHash, newUserData.Username)
 	if err != nil {
 		http.Error(w, "Database error", http.StatusInternalServerError)
 		return

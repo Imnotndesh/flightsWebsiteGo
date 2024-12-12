@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
-	"strings"
 )
 
 var (
@@ -28,40 +27,11 @@ func FlightsInformationHandler(db *sql.DB) http.HandlerFunc {
 
 // query: url:port/flights?q filter1=value ...
 func getAvailableFlight(db *sql.DB, w http.ResponseWriter, r *http.Request) {
-	baseQuery := `SELECT FID,DESTINATION,TERMINAL,PRICE,DEPATURE_TIME,AIRLINE,AVAILABLE_SEATS FROM flights`
-	var conditions []string
-	var args []interface{}
-	var err error
-	query := r.URL.Query()
-	filters.Airline = query.Get("airline")
-	filters.Destination = query.Get("destination")
-	filters.MinPrice = query.Get("min_price")
-	filters.MaxPrice = query.Get("max_price")
-	if filters.Airline != "" {
-		conditions = append(conditions, "AIRLINE = ?")
-		args = append(args, filters.Airline)
-	}
-	if filters.Destination != "" {
-		conditions = append(conditions, "DESTINATION = ?")
-		args = append(args, filters.Destination)
-	}
-	if filters.MaxPrice != "" {
-		conditions = append(conditions, "PRICE >= ?")
-		args = append(args, filters.MaxPrice)
-	}
-	if filters.MinPrice != "" {
-		conditions = append(conditions, "PRICE <= ?")
-		args = append(args, filters.MinPrice)
-	}
-	if len(conditions) > 0 {
-		baseQuery = baseQuery + " WHERE " + strings.Join(conditions, " AND ")
-	}
-	rows, err := db.Query(baseQuery, args...)
-	if err != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-	var flights []Models.Flight
+	var (
+		flights []Models.Flight
+		rows    *sql.Rows
+	)
+	rows, err = db.Query(`SELECT FID,DESTINATION,TERMINAL,PRICE,DEPATURE_TIME,AIRLINE,AVAILABLE_SEATS,REGNO,PID FROM flights`)
 	defer func(rows *sql.Rows) {
 		err = rows.Close()
 		if err != nil {
@@ -69,7 +39,7 @@ func getAvailableFlight(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 		}
 	}(rows)
 	for rows.Next() {
-		err := rows.Scan(&flightInfo.ID, &flightInfo.Destination, &flightInfo.Terminal, &flightInfo.Price, &flightInfo.DepatureTime, &flightInfo.Airline, &flightInfo.AvailableSeats)
+		err = rows.Scan(&flightInfo.ID, &flightInfo.Destination, &flightInfo.Terminal, &flightInfo.Price, &flightInfo.DepatureTime, &flightInfo.Airline, &flightInfo.AvailableSeats, &flightInfo.REGNO, &flightInfo.PID)
 		if err != nil {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return

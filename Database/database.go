@@ -71,6 +71,12 @@ func createSchema(db *sql.DB) error {
 	    	FOREIGN KEY (FID) REFERENCES flights(FID)
 	);
 `
+	adminsTable := `
+CREATE TABLE IF NOT EXISTS admins (
+    UNAME TEXT UNIQUE,
+    FNAME TEXT,
+    PASS_HASH TEXT,
+)`
 	flightTable := `
 CREATE TABLE IF NOT EXISTS flights (
     FID INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -98,6 +104,10 @@ CREATE TABLE IF NOT EXISTS flights (
 		return err
 	}
 	_, err = db.Exec(flightTable)
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec(adminsTable)
 	if err != nil {
 		return err
 	}

@@ -1,6 +1,6 @@
 FROM golang:latest
 WORKDIR /app
-COPY go.mod ./
-RUN go mod tidy
 COPY . .
-CMD ["go","run","main.go"]
+RUN go mod tidy
+RUN go build -o server
+CMD ["./server"]

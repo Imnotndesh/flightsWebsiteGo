@@ -13,6 +13,7 @@ import (
 var (
 	ticketInfo     Models.Ticket
 	bookingRequest Models.BookingRequest
+	youBrokeText   = "insufficient balance"
 )
 
 func TicketBookingHandler(db *sql.DB) http.HandlerFunc {
@@ -29,14 +30,18 @@ func TicketBookingHandler(db *sql.DB) http.HandlerFunc {
 	}
 }
 func ticketBooking(db *sql.DB, w http.ResponseWriter, r *http.Request) {
-	err := json.NewDecoder(r.Body).Decode(&bookingRequest)
-	log.Println(bookingRequest)
+	var (
+		bookingUser   Models.User
+		usrNewBalance int
+	)
+
+	err = json.NewDecoder(r.Body).Decode(&bookingRequest)
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
 	// Finding User information
-	err = db.QueryRow("SELECT FNAME,UID FROM users WHERE UNAME = ? LIMIT 1", bookingRequest.Username).Scan(&ticketInfo.Name, ticketInfo.UID)
+	err = db.QueryRow("SELECT FNAME,UID,BALANCE FROM users WHERE UNAME = ? LIMIT 1", bookingRequest.Username).Scan(&ticketInfo.Name, ticketInfo.UID, &bookingUser.Balance)
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
@@ -44,7 +49,6 @@ func ticketBooking(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
-
 	// Finding flight information
 	err = db.QueryRow("SELECT REGNO,DESTINATION,DEPATURE_TIME,AIRLINE,PRICE FROM flights WHERE FID = ?", bookingRequest.FlightID).Scan(&ticketInfo.RegNo, &ticketInfo.Destination, &ticketInfo.DepatureTime, &ticketInfo.Airline, &ticketInfo.Price)
 	if err != nil {
@@ -55,6 +59,15 @@ func ticketBooking(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ticketInfo.FID, err = strconv.Atoi(bookingRequest.FlightID)
+
+	// Check balance if actually available
+	if bookingUser.Balance < ticketInfo.Price {
+		http.Error(w, youBrokeText, http.StatusInternalServerError)
+		return
+	}
+	usrNewBalance = bookingUser.Balance - ticketInfo.Price
+	// Update the cut
+	_, err = db.Exec("UPDATE users SET BALANCE = ? WHERE UNAME = ?", usrNewBalance, ticketInfo.Username)
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return

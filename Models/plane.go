@@ -8,4 +8,6 @@ type Plane struct {
 	FirstClass   int    `json:"F_CLASS"`
 	EconomyClass int    `json:"E_CLASS"`
 	Capacity     int    `json:"CAPACITY"`
+	Pilot        string `json:"PILOT"`
+	Airline      string `json:"AIRLINE"`
 }
