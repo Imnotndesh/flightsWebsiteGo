@@ -30,7 +30,7 @@ func AuthHandler(db *sql.DB) http.HandlerFunc {
 	}
 }
 func authenticateUser(db *sql.DB, w http.ResponseWriter, r *http.Request) {
-	err = json.NewDecoder(r.Body).Decode(&reqBody)
+	err := json.NewDecoder(r.Body).Decode(&reqBody)
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return

@@ -31,15 +31,45 @@ func UserDetailsHandler(db *sql.DB) http.HandlerFunc {
 		}
 	}
 }
+func UserDeleteHandler(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		default:
+			fallthrough
+		case http.MethodDelete:
+			deleteUser(db, w, r)
+		}
+	}
+}
+
+func deleteUser(db *sql.DB, w http.ResponseWriter, r *http.Request) {
+	var (
+		tbdUser Models.User
+		err     error
+	)
+
+	if err = json.NewDecoder(r.Body).Decode(&tbdUser); err == nil || tbdUser.Username == "" {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if _, err = db.Exec(`DELETE FROM users WHERE UNAME = ?`, tbdUser.Username); err != nil || errors.Is(err, sql.ErrNoRows) {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
 
 // getUserDetails -> Returns user info from DB using JSON response
 func getUserDetails(db *sql.DB, w http.ResponseWriter, r *http.Request) {
-	var req Models.GetUserRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	var (
+		err error
+		req Models.GetUserRequest
+	)
+	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 	}
 	var fetchedUserDetails Models.User
-	err := db.QueryRow("SELECT PHONE,EMAIL,FNAME,UID FROM users WHERE UNAME = ?", req.Username).Scan(&fetchedUserDetails.Phone, &fetchedUserDetails.Email, &fetchedUserDetails.Fullname, &fetchedUserDetails.ID)
+	err = db.QueryRow("SELECT PHONE,EMAIL,FNAME,UID,BALANCE FROM users WHERE UNAME = ?", req.Username).Scan(&fetchedUserDetails.Phone, &fetchedUserDetails.Email, &fetchedUserDetails.Fullname, &fetchedUserDetails.ID, &fetchedUserDetails.Balance)
 	if errors.Is(err, sql.ErrNoRows) {
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
@@ -69,10 +99,54 @@ func UserRegistrationHandler(db *sql.DB) http.HandlerFunc {
 		}
 	}
 }
+func TopUpHandler(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		default:
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		case http.MethodPut:
+			TopUpBalance(db, w, r)
+		}
+	}
+}
+func IsUserInDB(username string, db *sql.DB) bool {
+	var (
+		userExists int
+	)
+	err := db.QueryRow(`SELECT users.UID FROM users WHERE UNAME = ?`, username).Scan(&userExists)
+	if err != nil || errors.Is(err, sql.ErrNoRows) {
+		return false
+	}
+	return true
+}
+func TopUpBalance(db *sql.DB, w http.ResponseWriter, r *http.Request) {
+	var (
+		topUpUser Models.User
+	)
+
+	if err := json.NewDecoder(r.Body).Decode(&topUpUser); err != nil || topUpUser.Username == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	if !IsUserInDB(topUpUser.Username, db) {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	_, err := db.Exec(`UPDATE users SET BALANCE = ? WHERE UNAME = ?`, topUpUser.Balance, topUpUser.Username)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
 
 // registerUser -> adds new user to DB using passed JSON as user details source
 func registerUser(db *sql.DB, w http.ResponseWriter, r *http.Request) {
-	var newUserData Models.User
+	var (
+		err         error
+		newUserData Models.User
+	)
 	if err = json.NewDecoder(r.Body).Decode(&newUserData); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -87,12 +161,13 @@ func registerUser(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	newUserData.Balance = 0
 	newUserData.PasswordHash, err = HashPassword(newUserData.Password)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	res, err := db.Exec("INSERT INTO users(UNAME, PHONE, EMAIL, FNAME, PASS_HASH) VALUES(?,?,?,?,?)", newUserData.Username, newUserData.Phone, newUserData.Email, newUserData.Fullname, newUserData.PasswordHash)
+	res, err := db.Exec("INSERT INTO users(UNAME, PHONE, EMAIL, FNAME, PASS_HASH,BALANCE) VALUES(?,?,?,?,?,?)", newUserData.Username, newUserData.Phone, newUserData.Email, newUserData.Fullname, newUserData.PasswordHash, newUserData.Balance)
 	if err != nil {
 		http.Error(w, "Error registering user", http.StatusInternalServerError)
 		return
@@ -123,8 +198,10 @@ func UserEditHandler(db *sql.DB) http.HandlerFunc {
 
 // updateUserDetails -> Updates user information inside db with provided ones
 func updateUserDetails(db *sql.DB, w http.ResponseWriter, r *http.Request) {
-	var editUserDetails Models.UpdateUserRequest
-	var newUserData Models.User
+	var (
+		editUserDetails Models.UpdateUserRequest
+		newUserData     Models.User
+	)
 	if err := json.NewDecoder(r.Body).Decode(&editUserDetails); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
@@ -149,7 +226,7 @@ func updateUserDetails(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 		Fullname:     editUserDetails.Name,
 		Phone:        editUserDetails.Phone,
 		Email:        editUserDetails.Email,
-		PasswordHash: string(hashedPass),
+		PasswordHash: hashedPass,
 	}
 	res, err := db.Exec("UPDATE users SET FNAME = ?, PHONE = ?, EMAIL = ? ,PASS_HASH = ? WHERE UNAME = ?", newUserData.Fullname, newUserData.Phone, newUserData.Email, newUserData.PasswordHash, newUserData.Username)
 	if err != nil {
