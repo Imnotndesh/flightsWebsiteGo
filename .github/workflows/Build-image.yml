@@ -16,7 +16,7 @@ jobs:
           sudo apt-get update -y
           sudo apt-get install -y podman
           mkdir -p $HOME/.config/containers
-          echo '{"insecure-registries": ["ghcr.io"]}' > $HOME/.config/containers/registries.conf
+          echo -e "[registries.insecure]\nregistries = [\"ghcr.io\"]" > $HOME/.config/containers/registries.conf
 
       - name: Build Image
         run: podman build -t ghcr.io/your-username/my-image .
