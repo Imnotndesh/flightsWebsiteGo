@@ -5,11 +5,12 @@ type Flight struct {
 	Destination    string `json:"destination"`
 	Terminal       string `json:"terminal"`
 	Price          int    `json:"price"`
-	DepatureTime   int    `json:"departure_time"`
+	DepatureTime   string `json:"departure_time"`
 	Airline        string `json:"airline"`
 	AvailableSeats int    `json:"available_seats"`
 	PID            int    `json:"pid"`
 	REGNO          string `json:"regno"`
+	Origin         string `json:"origin"`
 }
 
 type Filters struct {

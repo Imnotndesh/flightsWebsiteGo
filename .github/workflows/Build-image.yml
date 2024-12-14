@@ -1,0 +1,26 @@
+name: Build and Push Container Image
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Podman
+        uses: podman-desktop/action@v1
+        with:
+          podman-version: latest
+
+      - name: Build Image
+        run: podman build -t my-image .
+
+      - name: Login to GitHub Container Registry
+        run: podman login ghcr.io -u ${{ secrets.PODMAN-GHCR-TOKEN }}
+
+      - name: Push Image to GitHub Container Registry
+        run: podman push ghcr.io/your-username/my-image

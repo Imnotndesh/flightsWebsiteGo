@@ -1,13 +1,13 @@
 package Models
 
 type Plane struct {
-	ID           int    `json:"PID"`
-	RegNo        int    `json:"PREGNO"`
-	HeadHostess  string `json:"H_HOSTESS"`
-	SubHostess   string `json:"S_HOSTESS"`
-	FirstClass   int    `json:"F_CLASS"`
-	EconomyClass int    `json:"E_CLASS"`
-	Capacity     int    `json:"CAPACITY"`
-	Pilot        string `json:"PILOT"`
-	Airline      string `json:"AIRLINE"`
+	ID           int    `json:"pid"`
+	RegNo        string `json:"reg_no"`
+	HeadHostess  string `json:"h_hostess"`
+	SubHostess   string `json:"s_hostess"`
+	FirstClass   int    `json:"f_class"`
+	EconomyClass int    `json:"e_class"`
+	Capacity     int    `json:"capacity"`
+	Pilot        string `json:"pilot"`
+	Airline      string `json:"airline"`
 }

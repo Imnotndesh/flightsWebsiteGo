@@ -19,5 +19,5 @@ type UpdateUserRequest struct {
 }
 
 type GetUserRequest struct {
-	Username string `json:"Username"`
+	Username string `json:"username"`
 }

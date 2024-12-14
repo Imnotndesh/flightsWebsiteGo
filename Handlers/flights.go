@@ -4,12 +4,8 @@ import (
 	"AirportAPI/Models"
 	"database/sql"
 	"encoding/json"
+	"log"
 	"net/http"
-)
-
-var (
-	filters    Models.Filters
-	flightInfo Models.Flight
 )
 
 func FlightsInformationHandler(db *sql.DB) http.HandlerFunc {
@@ -28,10 +24,13 @@ func FlightsInformationHandler(db *sql.DB) http.HandlerFunc {
 // query: url:port/flights?q filter1=value ...
 func getAvailableFlight(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 	var (
-		flights []Models.Flight
-		rows    *sql.Rows
+		flights    []Models.Flight
+		rows       *sql.Rows
+		flightInfo Models.Flight
+		err        error
 	)
-	rows, err = db.Query(`SELECT FID,DESTINATION,TERMINAL,PRICE,DEPATURE_TIME,AIRLINE,AVAILABLE_SEATS,REGNO,PID FROM flights`)
+	log.Println(r.RequestURI)
+	rows, err = db.Query(`SELECT FID,DESTINATION,TERMINAL,PRICE,DEPATURE_TIME,AIRLINE,AVAILABLE_SEATS,REGNO,PID,ORIGIN FROM flights`)
 	defer func(rows *sql.Rows) {
 		err = rows.Close()
 		if err != nil {
@@ -39,7 +38,7 @@ func getAvailableFlight(db *sql.DB, w http.ResponseWriter, r *http.Request) {
 		}
 	}(rows)
 	for rows.Next() {
-		err = rows.Scan(&flightInfo.ID, &flightInfo.Destination, &flightInfo.Terminal, &flightInfo.Price, &flightInfo.DepatureTime, &flightInfo.Airline, &flightInfo.AvailableSeats, &flightInfo.REGNO, &flightInfo.PID)
+		err = rows.Scan(&flightInfo.ID, &flightInfo.Destination, &flightInfo.Terminal, &flightInfo.Price, &flightInfo.DepatureTime, &flightInfo.Airline, &flightInfo.AvailableSeats, &flightInfo.REGNO, &flightInfo.PID, &flightInfo.Origin)
 		if err != nil {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
